@@ -18,18 +18,16 @@ except ImportError:
     from distutils.core import setup
 
 setup(
-    name = 'BabelDjango',
-    description = 'Utilities for using Babel in Django',
-    version = '0.2.3',
-    license = 'BSD',
-    author  = 'Edgewall Software',
-    author_email = 'python-babel@googlegroups.com',
-    url = 'http://babel.edgewall.org/wiki/BabelDjango',
-
-    packages = ['babeldjango', 'babeldjango.templatetags'],
-    install_requires = ['Babel'],
-
-    entry_points = """
+    name='BabelDjango',
+    description='Utilities for using Babel in Django',
+    version='0.2.4',
+    license='BSD',
+    author ='Edgewall Software',
+    author_email='python-babel@googlegroups.com',
+    url='http://babel.edgewall.org/wiki/BabelDjango',
+    packages=['babeldjango', 'babeldjango.templatetags'],
+    install_requires=['Babel'],
+    entry_points="""
     [babel.extractors]
     django = babeldjango.extract:extract_django
     """,

@@ -14,12 +14,23 @@
 from babel.core import *
 
 from django.conf import settings
+
 settings.configure(USE_I18N=True)
-from django.template import Lexer, TOKEN_TEXT, TOKEN_VAR, TOKEN_BLOCK
-from django.utils.translation.trans_real import inline_re, block_re, \
-                                                endblock_re, plural_re, \
-                                                constant_re
+
+from django.template import (
+    Lexer,
+    TOKEN_TEXT,
+    TOKEN_VAR,
+    TOKEN_BLOCK,
+)
 from django.utils.encoding import smart_unicode
+from django.utils.translation.trans_real import (
+    block_re,
+    constant_re,
+    endblock_re,
+    inline_re,
+    plural_re,
+)
 
 
 def extract_django(fileobj, keywords, comment_tags, options):
@@ -40,18 +51,20 @@ def extract_django(fileobj, keywords, comment_tags, options):
     singular = []
     plural = []
     lineno = 1
-    for t in Lexer(fileobj.read(), None).tokenize():
+
+    for t in Lexer(fileobj.read().decode('utf8'), None).tokenize():
         lineno += t.contents.count('\n')
+
         if intrans:
             if t.token_type == TOKEN_BLOCK:
                 endbmatch = endblock_re.match(t.contents)
                 pluralmatch = plural_re.match(t.contents)
                 if endbmatch:
                     if inplural:
-                        yield lineno, 'ngettext', (u''.join(singular),
-                                                   u''.join(plural)), []
+                        yield lineno, 'ngettext', (u''.join(singular).strip(),
+                                                   u''.join(plural).strip()), []
                     else:
-                        yield lineno, None, u''.join(singular), []
+                        yield lineno, None, u''.join(singular).strip(), []
                     intrans = False
                     inplural = False
                     singular = []
@@ -63,9 +76,9 @@ def extract_django(fileobj, keywords, comment_tags, options):
                                       'other block tags: %s' % t.contents)
             elif t.token_type == TOKEN_VAR:
                 if inplural:
-                    plural.append(u'%%(%s)s' % t.contents)
+                    plural.append(u'%%(%s)s' % t.contents.strip())
                 else:
-                    singular.append(u'%%(%s)s' % t.contents)
+                    singular.append(u'%%(%s)s' % t.contents.strip())
             elif t.token_type == TOKEN_TEXT:
                 if inplural:
                     plural.append(t.contents)
@@ -77,7 +90,7 @@ def extract_django(fileobj, keywords, comment_tags, options):
                 bmatch = block_re.match(t.contents)
                 cmatches = constant_re.findall(t.contents)
                 if imatch:
-                    g = imatch.group(1)
+                    g = imatch.group(1).strip()
                     if g[0] == '"':
                         g = g.strip('"')
                     elif g[0] == "'":
@@ -85,6 +98,11 @@ def extract_django(fileobj, keywords, comment_tags, options):
                     yield lineno, None, smart_unicode(g), []
                 elif bmatch:
                     for fmatch in constant_re.findall(t.contents):
+                        fmatch = fmatch.strip()
+                        if fmatch[0] == '"':
+                            fmatch = fmatch.strip('"')
+                        elif fmatch[0] == "'":
+                            fmatch = fmatch.strip("'")
                         yield lineno, None, smart_unicode(fmatch), []
                     intrans = True
                     inplural = False
@@ -92,15 +110,27 @@ def extract_django(fileobj, keywords, comment_tags, options):
                     plural = []
                 elif cmatches:
                     for cmatch in cmatches:
+                        cmatch = cmatch.strip()
+                        if cmatch[0] == '"':
+                            cmatch = cmatch.strip('"')
+                        elif cmatch[0] == "'":
+                            cmatch = cmatch.strip("'")
+                        elif cmatch[0:2] == '\"':
+                            cmatch = cmatch.strip('\"')
+                        elif cmatch[0:2] == "\'":
+                            cmatch = cmatch.strip("\'")
                         yield lineno, None, smart_unicode(cmatch), []
             elif t.token_type == TOKEN_VAR:
                 parts = t.contents.split('|')
                 cmatch = constant_re.match(parts[0])
                 if cmatch:
-                    yield lineno, None, smart_unicode(cmatch.group(1)), []
+                    c1 = cmatch.group(1).strip()
+                    yield lineno, None, smart_unicode(c1), []
                 for p in parts[1:]:
                     if p.find(':_(') >= 0:
-                        p1 = p.split(':',1)[1]
+                        p1 = p.split(':', 1)[1]
+                        p1 = p1.strip()
+
                         if p1[0] == '_':
                             p1 = p1[1:]
                         if p1[0] == '(':
